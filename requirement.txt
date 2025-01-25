@@ -1,0 +1,5 @@
+FlagEmbedding
+torch
+transformers
+spicy
+qdrant_client
