@@ -56,14 +56,18 @@ def process_and_insert_data(df):
 
         # Extract the lexical weights (this is your sparse representation)
         lexical_weights = output_1['lexical_weights'][0]
-
         # Convert the lexical weights into a dictionary (index: weight)
         sparse_vector_dict = {token: weight for token, weight in lexical_weights.items()}
 
         try:
-            embedding = output_1['dense'][0]  # Dense vector from BGEM3
+            embedding = ast.literal_eval(row['ada_embedding'])
             if not isinstance(embedding, list):
                 raise ValueError("Embedding is not a valid list")
+            
+            embedding_dense = output_1['dense'][0]  # Dense vector from BGEM3
+            if not isinstance(embedding_dense, list):
+                raise ValueError("Embedding is not a valid list")
+
         except (ValueError, SyntaxError) as e:
             print(f"Error parsing embedding for row {row['สาขาวิชา']}: {e}")
             continue 
