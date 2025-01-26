@@ -64,7 +64,6 @@ def process_and_insert_data(df):
 
         # Extract the lexical weights (this is your sparse representation)
         lexical_weights = output_1['lexical_weights'][0]
-
         # Convert the lexical weights into a dictionary (index: weight)
         sparse_vector_dict = {token: weight for token, weight in lexical_weights.items()}
 
