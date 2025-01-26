@@ -14,7 +14,7 @@ load_dotenv()
 # openai.api_key = os.getenv("OPENAI_API_KEY")
 
 client = QdrantClient("http://localhost:6333")
-collection_name = "admission_records_test"
+collection_name = "admission_records_test_nate"
 
 # Initialize the BGEM3 model
 model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)  # Use FP16 for faster computation
@@ -49,6 +49,14 @@ def process_and_insert_data(df):
         admission_program = row.get('program_type', 'N/A')
         content = row.get('content', 'N/A')
 
+        try:
+            embedding = ast.literal_eval(row['ada_embedding'])
+            if not isinstance(embedding, list):
+                raise ValueError("Embedding is not a valid list")
+        except (ValueError, SyntaxError) as e:
+            print(f"Error parsing embedding for row {row['สาขาวิชา']}: {e}")
+            continue 
+
         # Use BGEM3 to generate dense and sparse vectors
         sentences_1 = [content]  # Use the content of the row for encoding
 
@@ -59,14 +67,6 @@ def process_and_insert_data(df):
 
         # Convert the lexical weights into a dictionary (index: weight)
         sparse_vector_dict = {token: weight for token, weight in lexical_weights.items()}
-
-        try:
-            embedding = output_1['dense'][0]  # Dense vector from BGEM3
-            if not isinstance(embedding, list):
-                raise ValueError("Embedding is not a valid list")
-        except (ValueError, SyntaxError) as e:
-            print(f"Error parsing embedding for row {row['สาขาวิชา']}: {e}")
-            continue 
 
         data = {
             "id": str(uuid_from_time(datetime.now())),
@@ -79,13 +79,13 @@ def process_and_insert_data(df):
             },
             "contents": content,
             "embedding": embedding,
-            "lexical_weights": sparse_vector_dict,  # Add lexical_weights here
         }
 
         # Prepare the sparse vector: list of indices and values for sparse vector
         indices = list(sparse_vector_dict.keys())  # Indices of the sparse vector
         values = list(sparse_vector_dict.values())  # Values of the sparse vector
-
+        native_floats = [float(x) for x in values]
+        new_dict = dict(zip(indices, native_floats))
         # Create the point with the embedding and sparse vector
         point = PointStruct(
             id=data["id"],
@@ -93,7 +93,7 @@ def process_and_insert_data(df):
                 "": data["embedding"],  # Dense vector
                 "keywords": models.SparseVector(  # Sparse vector with "keywords"
                     indices=indices,  # List of indices
-                    values=values  # List of values
+                    values=native_floats  # List of values
                 ),
             },
             payload={
@@ -103,7 +103,7 @@ def process_and_insert_data(df):
                 "reference": data["metadata"]["reference"],
                 "created_at": data["metadata"]["created_at"],
                 "contents": data["contents"],
-                "lexical_weights": sparse_vector_dict,  # Store sparse vector in payload
+                "lexical_weights": new_dict,  # Store sparse vector in payload
             },
         )
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         # '1-0-เรียนล่วงหน้า.csv',
         # '1-1-ช้างเผือก.csv',
         # '1-1-นานาชาติและภาษาอังกฤษ.csv',
-        '1-1-รับนักกีฬาดีเด่น.csv',
+        # '1-1-รับนักกีฬาดีเด่น.csv',
         # '1-2-ช้างเผือก.csv',
         # '1-2-โอลิมปิกวิชาการ.csv',
         # '2-0-MOU.csv',
