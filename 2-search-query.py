@@ -57,7 +57,7 @@ def search_similar_vectors(query_text, top_k=5):
         print(f"Found ID: {result.id}, Score: {result.score}, Metadata: {result.payload}")
 
 
-query = "เกณฑ์ของภาควิศวกรรมเคมี รอบ 2 ภาคไทยพิเศษเป็นอย่างไร"
+query = "ภาควิศวกรรมคอมพิวเตอร์ รอบ 2 มีเกณฑ์การรับเป็นอย่างไร"
 query_indices, query_values = compute_sparse_vector(query)
 
 search_result= client.query_points(
@@ -92,4 +92,7 @@ search_result= client.query_points(
 # )
 
 for result in search_result.points:
-    print(f"Found ID: {result.id}, Score: {result.score}, Metadata: {result.payload}")
+    # print(f"Found ID: {result.id}, Score: {result.score}, Metadata: {result.payload}")
+    print(f"Score: {result.score}")
+    print(f"""{result.payload["major"]}\n{result.payload["admission_program"]}\n{result.payload["contents"]}\n{result.payload["reference"]}""")
+    print("---------------------------------")
